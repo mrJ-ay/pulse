@@ -345,9 +345,6 @@ closeGoLiveBtn.addEventListener('click', () => { goLiveModal.hidden = true; });
 
 goLiveForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission().catch(() => {});
-  }
   const title = document.getElementById('streamTitleInput').value.trim();
   const category = document.getElementById('streamCatSelect').value;
   const source = document.getElementById('streamSourceSelect').value;
@@ -1005,15 +1002,6 @@ socket.on('stream:donation', (d) => {
       box.style.display = 'block';
       box.innerHTML = `<strong>💸 ${escapeHtml(d.senderName)}님이 ${formatWon(d.amount)} 후원!</strong><div>${escapeHtml(d.message || '')}</div>`;
     }
-  }
-
-  if (isHost && !isPopout && 'Notification' in window && Notification.permission === 'granted') {
-    try {
-      new Notification(`💸 ${d.senderName}님이 ${formatWon(d.amount)} 후원!`, {
-        body: d.message || 'PULSE 실시간 후원 도착',
-        tag: `pulse-don-${d.id || Date.now()}`,
-      });
-    } catch {}
   }
 
   speakDonationTTS(d.senderName, d.amount, d.message);
