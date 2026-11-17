@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PULSE — 실시간 개인방송 플랫폼</title>
-  <link rel="stylesheet" href="/style.css?v=6" />
+  <link rel="stylesheet" href="/style.css?v=7" />
 </head>
 <body>
   <header class="topbar">
@@ -98,6 +98,8 @@
             </div>
           </div>
           <div id="modQuickActions" class="mod-quick" hidden>
+            <button type="button" id="editDonatePosBtn" class="btn small">📍 후원 위치</button>
+            <button type="button" id="pipOverlayBtn" class="btn small">🪟 오버레이 창</button>
             <button type="button" id="setNoticeBtn" class="btn small">📌 공지 설정</button>
           </div>
         </div>
@@ -198,6 +200,6 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script type="module" src="/app.js?v=6"></script>
+  <script type="module" src="/app.js?v=7"></script>
 </body>
 </html>

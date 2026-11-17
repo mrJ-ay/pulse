@@ -793,3 +793,19 @@ body.popout-mode .chat-col {
   object-fit: contain;
   background: #000;
 }
+
+.donation-banner {
+  transform: translate(-50%, -50%);
+  user-select: none;
+}
+
+.donation-banner.editing-pos {
+  cursor: move;
+  outline: 2px dashed var(--neon);
+}
+
+.mod-quick {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
