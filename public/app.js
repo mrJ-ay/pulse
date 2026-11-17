@@ -460,6 +460,7 @@ function updateStreamStateUI(stream) {
   const amManager = Boolean(meUser && stream.managers?.includes(meUser.nickname));
   switchSourceBtn.hidden = !isHost;
   endStreamBtn.hidden = !isHost;
+  if (popoutChatBtn) popoutChatBtn.hidden = !isHost;
   modQuickActions.hidden = !(isHost || amManager);
 
   if (isHost) {
