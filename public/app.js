@@ -67,11 +67,14 @@ const modQuickActions = document.getElementById('modQuickActions');
 const setNoticeBtn = document.getElementById('setNoticeBtn');
 
 const myChatRole = document.getElementById('myChatRole');
+const popoutChatBtn = document.getElementById('popoutChatBtn');
 const pinnedNotice = document.getElementById('pinnedNotice');
 const pinnedNoticeText = document.getElementById('pinnedNoticeText');
 const chatList = document.getElementById('chatList');
 const chatForm = document.getElementById('chatForm');
 const chatInput = document.getElementById('chatInput');
+const isPopout = new URLSearchParams(location.search).get('popout') === '1';
+if (isPopout) document.body.classList.add('popout-mode');
 
 const donateAmtInput = document.getElementById('donateAmtInput');
 const donateMsgInput = document.getElementById('donateMsgInput');
@@ -465,22 +468,28 @@ function updateStreamStateUI(stream) {
   }
 }
 
-function joinStream(streamId) {
-  socket.emit('stream:join', { streamId }, (res) => {
+function joinStream(streamId, chatOnly = isPopout) {
+  socket.emit('stream:join', { streamId, chatOnly }, (res) => {
     if (!res?.ok) {
       alert(res?.error || '방송 입장 실패');
-      loadStreams();
+      if (!isPopout) loadStreams();
       return;
     }
     isHost = Boolean(res.isHost);
     enterRoomUI(res.stream);
-    if (!isHost) {
+    if (!chatOnly && !isHost) {
       videoPlayer.muted = false;
       playerPlaceholder.hidden = false;
       placeholderText.textContent = 'BJ의 방송 신호를 연결하는 중...';
     }
   });
 }
+
+popoutChatBtn?.addEventListener('click', () => {
+  if (!currentStream) return;
+  const url = `${location.origin}${location.pathname}?stream=${encodeURIComponent(currentStream.id)}&popout=1`;
+  window.open(url, `pulse_chat_${currentStream.id}`, 'width=400,height=680,resizable=yes,scrollbars=yes');
+});
 
 // Host WebRTC
 socket.on('webrtc:viewer_joined', async ({ viewerId }) => {

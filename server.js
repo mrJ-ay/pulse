@@ -277,7 +277,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('stream:join', ({ streamId } = {}, cb) => {
+  socket.on('stream:join', ({ streamId, chatOnly } = {}, cb) => {
     const id = String(streamId || '').toUpperCase();
     const s = streams.get(id);
     if (!s) {
@@ -300,16 +300,20 @@ io.on('connection', (socket) => {
     }
 
     socket.data.streamId = id;
+    socket.data.chatOnly = Boolean(chatOnly);
     socket.join(`stream:${id}`);
-    if (socket.id !== s.bjSocketId) {
+    if (!chatOnly && socket.id !== s.bjSocketId) {
       s.viewers.add(socket.id);
       io.to(s.bjSocketId).emit('webrtc:viewer_joined', { viewerId: socket.id });
     }
 
+    const isHostUser = socket.id === s.bjSocketId || Boolean(u.oneidId && u.oneidId === s.bjOneId);
     const state = serializeStream(s);
-    cb?.({ ok: true, stream: state, isHost: socket.id === s.bjSocketId });
-    io.to(`stream:${id}`).emit('stream:state', state);
-    io.emit('streams:updated');
+    cb?.({ ok: true, stream: state, isHost: isHostUser });
+    if (!chatOnly) {
+      io.to(`stream:${id}`).emit('stream:state', state);
+      io.emit('streams:updated');
+    }
   });
 
   socket.on('stream:leave', () => {

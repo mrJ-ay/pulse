@@ -646,3 +646,27 @@ input:focus, select:focus { border-color: var(--neon); }
   .chat-col { height: 460px; min-height: 400px; }
   .cat-tabs { display: none; }
 }
+
+
+/* Pop-out Chat Only Mode (?popout=1) */
+body.popout-mode .topbar,
+body.popout-mode .stage-col,
+body.popout-mode #popoutChatBtn {
+  display: none !important;
+}
+
+body.popout-mode .main-wrap {
+  padding: 0;
+  max-width: 100%;
+}
+
+body.popout-mode .room-view {
+  grid-template-columns: 1fr;
+}
+
+body.popout-mode .chat-col {
+  height: 100vh;
+  min-height: 100vh;
+  border-radius: 0;
+  border: none;
+}

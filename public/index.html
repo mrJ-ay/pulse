@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PULSE — 실시간 개인방송 플랫폼</title>
-  <link rel="stylesheet" href="/style.css?v=1" />
+  <link rel="stylesheet" href="/style.css?v=2" />
 </head>
 <body>
   <header class="topbar">
@@ -106,7 +106,10 @@
       <aside class="chat-col">
         <div class="chat-header">
           <strong>실시간 채팅</strong>
-          <span id="myChatRole" class="role-chip">시청자</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span id="myChatRole" class="role-chip">시청자</span>
+            <button type="button" id="popoutChatBtn" class="btn small" title="채팅만 별도 창으로 분리">🗗 창 분리</button>
+          </div>
         </div>
 
         <div id="pinnedNotice" class="pinned-notice" hidden>
@@ -189,6 +192,6 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script type="module" src="/app.js?v=1"></script>
+  <script type="module" src="/app.js?v=2"></script>
 </body>
 </html>
