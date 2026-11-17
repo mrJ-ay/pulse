@@ -76,6 +76,9 @@ const chatInput = document.getElementById('chatInput');
 const isPopout = new URLSearchParams(location.search).get('popout') === '1';
 if (isPopout) document.body.classList.add('popout-mode');
 
+const donateDrawer = document.getElementById('donateDrawer');
+const toggleDonateBtn = document.getElementById('toggleDonateBtn');
+const closeDonateDrawerBtn = document.getElementById('closeDonateDrawerBtn');
 const donateAmtInput = document.getElementById('donateAmtInput');
 const donateMsgInput = document.getElementById('donateMsgInput');
 const donateSendBtn = document.getElementById('donateSendBtn');
@@ -619,6 +622,13 @@ function appendChatRow(html) {
   chatList.scrollTop = chatList.scrollHeight;
 }
 
+const NICK_COLORS = ['#00ffa3', '#38bdf8', '#f472b6', '#fbbf24', '#a78bfa', '#fb7185'];
+function pickNickColor(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return NICK_COLORS[h % NICK_COLORS.length];
+}
+
 socket.on('chat:message', (msg) => {
   const roleBadge =
     msg.role === 'bj'
@@ -626,8 +636,14 @@ socket.on('chat:message', (msg) => {
       : msg.role === 'manager'
       ? '<span class="badge-role manager">매니저</span>'
       : '';
+  const timeStr = new Date(msg.createdAt || Date.now()).toLocaleTimeString('ko-KR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  const nickColor =
+    msg.role === 'bj' ? '#00ffa3' : msg.role === 'manager' ? '#00d4ff' : pickNickColor(msg.nickname || '');
   appendChatRow(
-    `${roleBadge}<span class="chat-nick ${escapeHtml(msg.role)}" data-nick="${escapeHtml(msg.nickname)}" data-oneid="${escapeHtml(msg.oneidId || '')}">${escapeHtml(msg.nickname)}</span><span>${escapeHtml(msg.text)}</span>`
+    `<span class="chat-time">${timeStr}</span>${roleBadge}<span class="chat-nick ${escapeHtml(msg.role)}" style="color:${nickColor}" data-nick="${escapeHtml(msg.nickname)}" data-oneid="${escapeHtml(msg.oneidId || '')}">${escapeHtml(msg.nickname)}</span><span class="chat-text">${escapeHtml(msg.text)}</span>`
   );
 });
 
@@ -692,6 +708,17 @@ chatForm.addEventListener('submit', (e) => {
   chatInput.value = '';
 });
 
+toggleDonateBtn?.addEventListener('click', () => {
+  const willOpen = donateDrawer.hidden;
+  donateDrawer.hidden = !willOpen;
+  toggleDonateBtn.classList.toggle('active', willOpen);
+});
+
+closeDonateDrawerBtn?.addEventListener('click', () => {
+  donateDrawer.hidden = true;
+  toggleDonateBtn?.classList.remove('active');
+});
+
 // Donations & TTS
 document.querySelectorAll('.preset-btn').forEach((btn) => {
   btn.addEventListener('click', () => {
@@ -726,6 +753,8 @@ donateSendBtn.addEventListener('click', async () => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || '후원 실패');
     donateMsgInput.value = '';
+    donateDrawer.hidden = true;
+    toggleDonateBtn?.classList.remove('active');
     if (typeof data.balance === 'number') {
       bankBalanceText.textContent = formatWon(data.balance);
     }

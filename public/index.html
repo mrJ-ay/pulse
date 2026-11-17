@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PULSE — 실시간 개인방송 플랫폼</title>
-  <link rel="stylesheet" href="/style.css?v=2" />
+  <link rel="stylesheet" href="/style.css?v=3" />
 </head>
 <body>
   <header class="topbar">
@@ -119,8 +119,12 @@
 
         <div id="chatList" class="chat-list"></div>
 
-        <!-- ONE BANK Donation Box -->
-        <div class="donate-box">
+        <!-- ONE BANK Donation Drawer (toggled by button) -->
+        <div id="donateDrawer" class="donate-box" hidden>
+          <div class="donate-drawer-head">
+            <span>💸 ONE BANK 후원 (수수료 0%)</span>
+            <button type="button" id="closeDonateDrawerBtn" class="icon-close small">×</button>
+          </div>
           <div class="donate-presets">
             <button type="button" class="preset-btn" data-amt="1000">+1,000원</button>
             <button type="button" class="preset-btn" data-amt="5000">+5,000원</button>
@@ -129,13 +133,14 @@
           <div class="donate-inputs">
             <input id="donateAmtInput" type="number" min="100" step="100" value="1000" placeholder="금액 (원)" />
             <input id="donateMsgInput" type="text" maxlength="120" placeholder="후원 메시지 (TTS 낭독)" />
-            <button type="button" id="donateSendBtn" class="btn neon small">후원</button>
+            <button type="button" id="donateSendBtn" class="btn neon small">쏘기</button>
           </div>
         </div>
 
         <form id="chatForm" class="chat-form">
+          <button type="button" id="toggleDonateBtn" class="donate-toggle-btn" title="후원하기">💸</button>
           <input id="chatInput" type="text" maxlength="300" placeholder="채팅을 입력하세요..." autocomplete="off" />
-          <button type="submit" class="btn small">전송</button>
+          <button type="submit" class="btn neon small">전송</button>
         </form>
       </aside>
     </section>
@@ -192,6 +197,6 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script type="module" src="/app.js?v=2"></script>
+  <script type="module" src="/app.js?v=3"></script>
 </body>
 </html>

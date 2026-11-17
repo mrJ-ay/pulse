@@ -670,3 +670,119 @@ body.popout-mode .chat-col {
   border-radius: 0;
   border: none;
 }
+
+
+/* Sleek Chzzk-style Chat & Donation Drawer Upgrade */
+.chat-col {
+  background: #10131c;
+  border: 1px solid #202738;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.chat-header {
+  background: #141925;
+  padding: 12px 14px;
+}
+
+.chat-list {
+  padding: 10px 10px;
+  gap: 4px;
+}
+
+.chat-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-list::-webkit-scrollbar-thumb {
+  background: #283146;
+  border-radius: 999px;
+}
+
+.chat-item {
+  padding: 5px 8px;
+  border-radius: 7px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  transition: background 0.12s ease;
+  animation: chatFadeIn 0.14s ease-out;
+}
+
+.chat-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+@keyframes chatFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.chat-time {
+  font-size: 10.5px;
+  color: #5b667d;
+  margin-right: 6px;
+}
+
+.chat-nick {
+  font-weight: 800;
+  margin-right: 7px;
+}
+
+.chat-nick:hover {
+  text-decoration: underline;
+}
+
+.chat-text {
+  color: #e6ebf5;
+}
+
+.chat-donation {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.16), rgba(0, 255, 163, 0.1));
+  border: 1px solid rgba(251, 191, 36, 0.5);
+  border-left: 4px solid var(--gold);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 4px 0;
+}
+
+.donate-drawer-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.icon-close.small {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.donate-toggle-btn {
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  color: var(--gold);
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.donate-toggle-btn:hover,
+.donate-toggle-btn.active {
+  background: rgba(251, 191, 36, 0.25);
+  border-color: var(--gold);
+}
+
+.chat-form {
+  background: #141925;
+  padding: 10px;
+  gap: 8px;
+}
+
+.chat-form input {
+  background: #0b0e15;
+  border-radius: 10px;
+  padding: 9px 12px;
+}
