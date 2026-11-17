@@ -867,8 +867,9 @@ donateSendBtn.addEventListener('click', async () => {
 });
 
 let bannerTimer = null;
+const seenDonations = new Set();
 function speakDonationTTS(senderName, amount, message) {
-  if (!ttsEnabled || !('speechSynthesis' in window)) return;
+  if (isPopout || !ttsEnabled || !('speechSynthesis' in window)) return;
   try {
     const text = message
       ? `${senderName}님이 ${amount.toLocaleString('ko-KR')}원 후원하셨습니다. ${message}`
@@ -882,6 +883,11 @@ function speakDonationTTS(senderName, amount, message) {
 
 socket.on('stream:donation', (d) => {
   if (!currentStream) return;
+  if (d?.id) {
+    if (seenDonations.has(d.id)) return;
+    seenDonations.add(d.id);
+    if (seenDonations.size > 200) seenDonations.clear();
+  }
   currentStream.totalDonated = d.totalDonated;
   hudDonated.textContent = `💸 ${formatWon(d.totalDonated)}`;
 
