@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PULSE — 실시간 개인방송 플랫폼</title>
+  <link rel="stylesheet" href="/style.css?v=1" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <a href="/" id="brandHome" class="brand">
+        <span class="pulse-dot"></span>
+        <span>PULSE</span>
+      </a>
+      <nav class="cat-tabs" id="catTabs">
+        <button type="button" class="cat-btn active" data-cat="전체">전체</button>
+        <button type="button" class="cat-btn" data-cat="게임">게임</button>
+        <button type="button" class="cat-btn" data-cat="토크">토크</button>
+        <button type="button" class="cat-btn" data-cat="음악">음악</button>
+        <button type="button" class="cat-btn" data-cat="코딩">코딩</button>
+        <button type="button" class="cat-btn" data-cat="기타">기타</button>
+      </nav>
+    </div>
+
+    <div class="topbar-right">
+      <div id="bankBadge" class="bank-badge" hidden>
+        <span class="bank-label">ONE BANK</span>
+        <strong id="bankBalanceText">₩0</strong>
+      </div>
+      <button type="button" id="goLiveBtn" class="btn neon">📡 방송하기</button>
+      <button type="button" id="oneidBtn" class="btn">ONEID 로그인</button>
+    </div>
+  </header>
+
+  <main class="main-wrap">
+    <!-- LOBBY VIEW -->
+    <section id="lobbyView" class="lobby-view">
+      <div class="lobby-head">
+        <div>
+          <h1>라이브 방송</h1>
+          <p>지금 실시간으로 송출 중인 스트리밍에 입장하거나 직접 방송을 시작하세요.</p>
+        </div>
+        <button type="button" id="refreshLobbyBtn" class="btn small">새로고침</button>
+      </div>
+      <div id="streamGrid" class="stream-grid">
+        <div class="empty-lobby">방송 목록을 불러오는 중...</div>
+      </div>
+    </section>
+
+    <!-- LIVE STREAM ROOM VIEW -->
+    <section id="roomView" class="room-view" hidden>
+      <div class="stage-col">
+        <div class="player-wrap">
+          <video id="videoPlayer" autoplay playsinline></video>
+          <div id="playerPlaceholder" class="player-placeholder" hidden>
+            <div class="spinner"></div>
+            <span id="placeholderText">방송 신호를 연결하는 중...</span>
+          </div>
+
+          <div class="player-hud-top">
+            <span class="live-pill">LIVE</span>
+            <span id="hudViewers" class="hud-chip">👁 0명</span>
+            <span id="hudDonated" class="hud-chip gold">💸 ₩0</span>
+          </div>
+
+          <!-- Donation Alert Banner -->
+          <div id="donationBanner" class="donation-banner" hidden>
+            <div class="don-badge">PULSE 후원</div>
+            <div id="donationBannerTitle" class="don-title">닉네임님이 ₩10,000 후원!</div>
+            <div id="donationBannerMsg" class="don-msg"></div>
+          </div>
+
+          <div class="player-controls">
+            <div class="ctrl-left">
+              <button type="button" id="muteToggleBtn" class="ctrl-btn">🔊 소리 켜짐</button>
+              <button type="button" id="ttsToggleBtn" class="ctrl-btn active">🗣️ TTS 켜짐</button>
+            </div>
+            <div class="ctrl-right">
+              <button type="button" id="switchSourceBtn" class="ctrl-btn" hidden>🔄 화면/캠 전환</button>
+              <button type="button" id="endStreamBtn" class="ctrl-btn danger" hidden>⏹ 방송 종료</button>
+              <button type="button" id="fullscreenBtn" class="ctrl-btn">⛶ 전체화면</button>
+              <button type="button" id="leaveStreamBtn" class="ctrl-btn">로비로</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="stream-info-bar">
+          <div>
+            <div class="info-badges">
+              <span id="roomCatBadge" class="cat-pill">토크</span>
+              <span id="roomCodeBadge" class="code-pill">#CODE</span>
+            </div>
+            <h2 id="roomTitleEl">방송 제목</h2>
+            <div class="bj-row">
+              BJ <strong id="roomBjEl">스트리머</strong>
+            </div>
+          </div>
+          <div id="modQuickActions" class="mod-quick" hidden>
+            <button type="button" id="setNoticeBtn" class="btn small">📌 공지 설정</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT CHAT & DONATION PANEL -->
+      <aside class="chat-col">
+        <div class="chat-header">
+          <strong>실시간 채팅</strong>
+          <span id="myChatRole" class="role-chip">시청자</span>
+        </div>
+
+        <div id="pinnedNotice" class="pinned-notice" hidden>
+          <span>📌</span>
+          <span id="pinnedNoticeText"></span>
+        </div>
+
+        <div id="chatList" class="chat-list"></div>
+
+        <!-- ONE BANK Donation Box -->
+        <div class="donate-box">
+          <div class="donate-presets">
+            <button type="button" class="preset-btn" data-amt="1000">+1,000원</button>
+            <button type="button" class="preset-btn" data-amt="5000">+5,000원</button>
+            <button type="button" class="preset-btn" data-amt="10000">+10,000원</button>
+          </div>
+          <div class="donate-inputs">
+            <input id="donateAmtInput" type="number" min="100" step="100" value="1000" placeholder="금액 (원)" />
+            <input id="donateMsgInput" type="text" maxlength="120" placeholder="후원 메시지 (TTS 낭독)" />
+            <button type="button" id="donateSendBtn" class="btn neon small">후원</button>
+          </div>
+        </div>
+
+        <form id="chatForm" class="chat-form">
+          <input id="chatInput" type="text" maxlength="300" placeholder="채팅을 입력하세요..." autocomplete="off" />
+          <button type="submit" class="btn small">전송</button>
+        </form>
+      </aside>
+    </section>
+  </main>
+
+  <!-- GO LIVE MODAL -->
+  <div id="goLiveModal" class="modal-backdrop" hidden>
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3>라이브 방송 시작</h3>
+        <button type="button" id="closeGoLiveBtn" class="icon-close">×</button>
+      </div>
+      <form id="goLiveForm" class="modal-form">
+        <label>
+          <span>방송 제목</span>
+          <input id="streamTitleInput" type="text" maxlength="60" placeholder="예: 코딩 방송 / 저스트 채팅" required />
+        </label>
+        <label>
+          <span>카테고리</span>
+          <select id="streamCatSelect">
+            <option value="토크">토크</option>
+            <option value="게임">게임</option>
+            <option value="음악">음악</option>
+            <option value="코딩">코딩</option>
+            <option value="기타">기타</option>
+          </select>
+        </label>
+        <label>
+          <span>송출 방식</span>
+          <select id="streamSourceSelect">
+            <option value="screen">화면 공유 (오디오 포함)</option>
+            <option value="camera">웹캠 + 마이크</option>
+          </select>
+        </label>
+        <p class="modal-hint">후원금은 로그인한 계정의 ONE BANK 계좌로 수수료 없이 100% 바로 입금됩니다.</p>
+        <button type="submit" class="btn neon full">방송 송출 시작</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODERATION MODAL -->
+  <div id="modModal" class="modal-backdrop" hidden>
+    <div class="modal-box small-modal">
+      <div class="modal-head">
+        <h3 id="modTargetTitle">유저 관리</h3>
+        <button type="button" id="closeModBtn" class="icon-close">×</button>
+      </div>
+      <div class="mod-actions-stack">
+        <button type="button" id="modManagerBtn" class="btn">🛡️ 매니저 임명 / 해제</button>
+        <button type="button" id="modMuteBtn" class="btn">🔇 채팅 금지 / 해제</button>
+        <button type="button" id="modKickBtn" class="btn danger">⛔ 방송에서 강퇴</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="module" src="/app.js?v=1"></script>
+</body>
+</html>

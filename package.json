@@ -1,0 +1,15 @@
+{
+  "name": "pulse",
+  "version": "1.0.0",
+  "description": "PULSE - Real-time WebRTC live streaming platform with ONEID & ONE BANK donations",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
+}
