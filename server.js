@@ -307,7 +307,7 @@ io.on('connection', (socket) => {
       io.to(s.bjSocketId).emit('webrtc:viewer_joined', { viewerId: socket.id });
     }
 
-    const isHostUser = socket.id === s.bjSocketId || Boolean(u.oneidId && u.oneidId === s.bjOneId);
+    const isHostUser = socket.id === s.bjSocketId || (Boolean(chatOnly) && Boolean(u.oneidId && u.oneidId === s.bjOneId));
     const state = serializeStream(s);
     cb?.({ ok: true, stream: state, isHost: isHostUser });
     if (!chatOnly) {
@@ -343,6 +343,24 @@ io.on('connection', (socket) => {
 
   socket.on('webrtc:ice', ({ targetId, candidate } = {}) => {
     if (targetId && candidate) io.to(targetId).emit('webrtc:ice', { fromId: socket.id, candidate });
+  });
+
+  // Fallback frame relay when strict NAT/firewall blocks WebRTC P2P
+  socket.on('stream:request_relay', ({ streamId } = {}) => {
+    const s = streams.get(String(streamId || '').toUpperCase());
+    if (!s || socket.id === s.bjSocketId) return;
+    s.relayViewers = s.relayViewers || new Set();
+    s.relayViewers.add(socket.id);
+    io.to(s.bjSocketId).emit('stream:relay_needed', { active: true });
+  });
+
+  socket.on('stream:relay_frame', ({ streamId, dataUrl } = {}) => {
+    const s = streams.get(String(streamId || '').toUpperCase());
+    if (!s || s.bjSocketId !== socket.id || !s.relayViewers?.size) return;
+    if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/')) return;
+    for (const vid of s.relayViewers) {
+      io.to(vid).emit('stream:relay_frame', { dataUrl });
+    }
   });
 
   // Chat

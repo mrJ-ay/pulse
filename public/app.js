@@ -44,6 +44,7 @@ const refreshLobbyBtn = document.getElementById('refreshLobbyBtn');
 
 const roomView = document.getElementById('roomView');
 const videoPlayer = document.getElementById('videoPlayer');
+const relayPlayer = document.getElementById('relayPlayer');
 const playerPlaceholder = document.getElementById('playerPlaceholder');
 const placeholderText = document.getElementById('placeholderText');
 const hudViewers = document.getElementById('hudViewers');
@@ -291,6 +292,7 @@ async function captureSource(type) {
 }
 
 function cleanupMedia() {
+  stopRelayFallback();
   if (thumbInterval) {
     clearInterval(thumbInterval);
     thumbInterval = null;
@@ -472,7 +474,61 @@ function updateStreamStateUI(stream) {
   }
 }
 
+let relayTimer = null;
+let hostRelayInterval = null;
+let hostRelayActive = false;
+const pendingIce = new Map();
+
+function stopRelayFallback() {
+  if (relayTimer) {
+    clearTimeout(relayTimer);
+    relayTimer = null;
+  }
+  if (hostRelayInterval) {
+    clearInterval(hostRelayInterval);
+    hostRelayInterval = null;
+  }
+  hostRelayActive = false;
+  if (relayPlayer) {
+    relayPlayer.hidden = true;
+    relayPlayer.src = '';
+  }
+  if (videoPlayer) videoPlayer.hidden = false;
+}
+
+function startHostRelayLoop(streamId) {
+  if (hostRelayInterval || !isHost) return;
+  const canvas = document.createElement('canvas');
+  canvas.width = 854;
+  canvas.height = 480;
+  const ctx = canvas.getContext('2d');
+  hostRelayInterval = setInterval(() => {
+    if (!isHost || !currentStream || !hostRelayActive || videoPlayer.readyState < 2) return;
+    try {
+      ctx.drawImage(videoPlayer, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
+      socket.emit('stream:relay_frame', { streamId, dataUrl });
+    } catch {}
+  }, 90);
+}
+
+socket.on('stream:relay_needed', () => {
+  if (!isHost || !currentStream) return;
+  hostRelayActive = true;
+  startHostRelayLoop(currentStream.id);
+});
+
+socket.on('stream:relay_frame', ({ dataUrl }) => {
+  if (isHost || !currentStream || isPopout) return;
+  if (videoPlayer.readyState >= 2 && !videoPlayer.paused) return;
+  videoPlayer.hidden = true;
+  relayPlayer.hidden = false;
+  relayPlayer.src = dataUrl;
+  playerPlaceholder.hidden = true;
+});
+
 function joinStream(streamId, chatOnly = isPopout) {
+  stopRelayFallback();
   socket.emit('stream:join', { streamId, chatOnly }, (res) => {
     if (!res?.ok) {
       alert(res?.error || '방송 입장 실패');
@@ -483,8 +539,16 @@ function joinStream(streamId, chatOnly = isPopout) {
     enterRoomUI(res.stream);
     if (!chatOnly && !isHost) {
       videoPlayer.muted = false;
+      videoPlayer.hidden = false;
+      relayPlayer.hidden = true;
       playerPlaceholder.hidden = false;
       placeholderText.textContent = 'BJ의 방송 신호를 연결하는 중...';
+      relayTimer = setTimeout(() => {
+        if (!isHost && currentStream && videoPlayer.readyState < 2) {
+          placeholderText.textContent = '릴레이 모드로 화면을 수신하는 중...';
+          socket.emit('stream:request_relay', { streamId: currentStream.id });
+        }
+      }, 3500);
     }
   });
 }
@@ -494,6 +558,14 @@ popoutChatBtn?.addEventListener('click', () => {
   const url = `${location.origin}${location.pathname}?stream=${encodeURIComponent(currentStream.id)}&popout=1`;
   window.open(url, `pulse_chat_${currentStream.id}`, 'width=400,height=680,resizable=yes,scrollbars=yes');
 });
+
+async function flushPendingIce(pc, peerId) {
+  const list = pendingIce.get(peerId) || [];
+  pendingIce.delete(peerId);
+  for (const cand of list) {
+    try { await pc.addIceCandidate(new RTCIceCandidate(cand)); } catch {}
+  }
+}
 
 // Host WebRTC
 socket.on('webrtc:viewer_joined', async ({ viewerId }) => {
@@ -515,6 +587,7 @@ socket.on('webrtc:viewer_joined', async ({ viewerId }) => {
 });
 
 socket.on('webrtc:viewer_left', ({ viewerId }) => {
+  pendingIce.delete(viewerId);
   const pc = hostPeers.get(viewerId);
   if (pc) {
     try { pc.close(); } catch {}
@@ -529,15 +602,29 @@ socket.on('webrtc:offer', async ({ fromId, sdp }) => {
     try { viewerPc.close(); } catch {}
   }
   viewerPc = new RTCPeerConnection(ICE_CONFIG);
+  const remoteStream = new MediaStream();
 
   viewerPc.ontrack = (e) => {
-    videoPlayer.srcObject = e.streams[0];
+    if (e.streams && e.streams[0]) {
+      videoPlayer.srcObject = e.streams[0];
+    } else {
+      remoteStream.addTrack(e.track);
+      videoPlayer.srcObject = remoteStream;
+    }
+    videoPlayer.hidden = false;
+    relayPlayer.hidden = true;
     playerPlaceholder.hidden = true;
     videoPlayer.play().catch(() => {
       videoPlayer.muted = true;
       muteToggleBtn.textContent = '🔇 음소거됨 (클릭)';
       videoPlayer.play().catch(() => {});
     });
+  };
+
+  viewerPc.oniceconnectionstatechange = () => {
+    if ((viewerPc?.iceConnectionState === 'failed' || viewerPc?.iceConnectionState === 'disconnected') && currentStream) {
+      socket.emit('stream:request_relay', { streamId: currentStream.id });
+    }
   };
 
   viewerPc.onicecandidate = (e) => {
@@ -547,6 +634,7 @@ socket.on('webrtc:offer', async ({ fromId, sdp }) => {
   };
 
   await viewerPc.setRemoteDescription(new RTCSessionDescription(sdp));
+  await flushPendingIce(viewerPc, fromId);
   const answer = await viewerPc.createAnswer();
   await viewerPc.setLocalDescription(answer);
   socket.emit('webrtc:answer', { targetId: fromId, sdp: answer });
@@ -556,16 +644,28 @@ socket.on('webrtc:answer', async ({ fromId, sdp }) => {
   const pc = hostPeers.get(fromId);
   if (pc) {
     await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+    await flushPendingIce(pc, fromId);
   }
 });
 
 socket.on('webrtc:ice', async ({ fromId, candidate }) => {
+  if (!candidate) return;
   const pc = isHost ? hostPeers.get(fromId) : viewerPc;
-  if (pc && candidate) {
-    try {
-      await pc.addIceCandidate(new RTCIceCandidate(candidate));
-    } catch {}
+  if (!pc || !pc.remoteDescription) {
+    const q = pendingIce.get(fromId) || [];
+    q.push(candidate);
+    pendingIce.set(fromId, q);
+    return;
   }
+  try {
+    await pc.addIceCandidate(new RTCIceCandidate(candidate));
+  } catch {}
+});
+
+// Reconnect & Lobby Auto-Refresh
+socket.on('connect', () => {
+  if (oneidToken) socket.emit('auth:identify', { token: oneidToken });
+  if (!currentStream && !isPopout) loadStreams();
 });
 
 // Stream Events
