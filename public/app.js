@@ -49,9 +49,6 @@ const playerPlaceholder = document.getElementById('playerPlaceholder');
 const placeholderText = document.getElementById('placeholderText');
 const hudViewers = document.getElementById('hudViewers');
 const hudDonated = document.getElementById('hudDonated');
-const donationBanner = document.getElementById('donationBanner');
-const donationBannerTitle = document.getElementById('donationBannerTitle');
-const donationBannerMsg = document.getElementById('donationBannerMsg');
 
 const muteToggleBtn = document.getElementById('muteToggleBtn');
 const ttsToggleBtn = document.getElementById('ttsToggleBtn');
@@ -65,8 +62,6 @@ const roomCodeBadge = document.getElementById('roomCodeBadge');
 const roomTitleEl = document.getElementById('roomTitleEl');
 const roomBjEl = document.getElementById('roomBjEl');
 const modQuickActions = document.getElementById('modQuickActions');
-const editDonatePosBtn = document.getElementById('editDonatePosBtn');
-const pipOverlayBtn = document.getElementById('pipOverlayBtn');
 const setNoticeBtn = document.getElementById('setNoticeBtn');
 
 const myChatRole = document.getElementById('myChatRole');
@@ -697,13 +692,6 @@ muteToggleBtn.addEventListener('click', () => {
   muteToggleBtn.textContent = videoPlayer.muted ? '🔇 음소거됨' : '🔊 소리 켜짐';
 });
 
-ttsToggleBtn.addEventListener('click', () => {
-  ttsEnabled = !ttsEnabled;
-  ttsToggleBtn.classList.toggle('active', ttsEnabled);
-  ttsToggleBtn.textContent = ttsEnabled ? '🗣️ TTS 켜짐' : '🔇 TTS 꺼짐';
-  if (!ttsEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
-});
-
 fullscreenBtn.addEventListener('click', () => {
   const wrap = videoPlayer.parentElement;
   if (!document.fullscreenElement) {
@@ -868,110 +856,7 @@ donateSendBtn.addEventListener('click', async () => {
   }
 });
 
-const DON_POS_KEY = 'pulse_don_pos';
-let donPos = (() => {
-  try {
-    const p = JSON.parse(localStorage.getItem(DON_POS_KEY) || '{}');
-    if (typeof p.x === 'number' && typeof p.y === 'number') return p;
-  } catch {}
-  return { x: 50, y: 22 };
-})();
-
-function applyDonationPosition() {
-  donationBanner.style.left = `${donPos.x}%`;
-  donationBanner.style.top = `${donPos.y}%`;
-}
-applyDonationPosition();
-
-let editingDonPos = false;
-editDonatePosBtn?.addEventListener('click', () => {
-  editingDonPos = !editingDonPos;
-  editDonatePosBtn.textContent = editingDonPos ? '✅ 위치 저장' : '📍 후원 위치';
-  donationBanner.classList.toggle('editing-pos', editingDonPos);
-  if (editingDonPos) {
-    clearTimeout(bannerTimer);
-    donationBannerTitle.textContent = '후원 알림 위치 미리보기';
-    donationBannerMsg.textContent = '마우스로 드래그해서 원하는 위치에 놓으세요';
-    donationBanner.hidden = false;
-    applyDonationPosition();
-  } else {
-    localStorage.setItem(DON_POS_KEY, JSON.stringify(donPos));
-    donationBanner.hidden = true;
-  }
-});
-
-let draggingBanner = false;
-donationBanner.addEventListener('pointerdown', (e) => {
-  if (!editingDonPos) return;
-  draggingBanner = true;
-  donationBanner.setPointerCapture?.(e.pointerId);
-});
-
-window.addEventListener('pointermove', (e) => {
-  if (!draggingBanner || !editingDonPos) return;
-  const rect = videoPlayer.parentElement.getBoundingClientRect();
-  if (!rect.width || !rect.height) return;
-  const x = Math.min(90, Math.max(10, ((e.clientX - rect.left) / rect.width) * 100));
-  const y = Math.min(88, Math.max(12, ((e.clientY - rect.top) / rect.height) * 100));
-  donPos = { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
-  applyDonationPosition();
-});
-
-window.addEventListener('pointerup', () => {
-  if (!draggingBanner) return;
-  draggingBanner = false;
-  localStorage.setItem(DON_POS_KEY, JSON.stringify(donPos));
-});
-
-// Always-on-top Document PiP Overlay Window
-let pipWin = null;
-pipOverlayBtn?.addEventListener('click', async () => {
-  if (pipWin && !pipWin.closed) {
-    pipWin.focus();
-    return;
-  }
-  if (!('documentPictureInPicture' in window)) {
-    const url = `${location.origin}${location.pathname}?stream=${encodeURIComponent(currentStream?.id || '')}&popout=1`;
-    window.open(url, `pulse_overlay_${currentStream?.id || 'live'}`, 'width=380,height=260,resizable=yes');
-    return;
-  }
-  try {
-    pipWin = await window.documentPictureInPicture.requestWindow({ width: 380, height: 280 });
-    pipWin.document.head.innerHTML = `
-      <title>PULSE 오버레이</title>
-      <style>
-        body { margin:0; font-family:'Pretendard',sans-serif; background:#0b0d12; color:#eef2f8; padding:12px; display:flex; flex-direction:column; gap:8px; }
-        .head { font-size:12px; font-weight:800; color:#00ffa3; display:flex; justify-content:space-between; }
-        .don { background:rgba(251,191,36,.16); border:1px solid #fbbf24; border-radius:10px; padding:10px; }
-        .don strong { color:#fbbf24; font-size:15px; display:block; }
-        .feed { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:5px; font-size:13px; }
-        .row b { color:#00d4ff; margin-right:6px; }
-      </style>
-    `;
-    pipWin.document.body.innerHTML = `
-      <div class="head"><span>🔴 PULSE 항상 위 오버레이</span><span>${escapeHtml(currentStream?.title || '')}</span></div>
-      <div id="pipDonBox" class="don" style="display:none;"></div>
-      <div id="pipFeed" class="feed"></div>
-    `;
-  } catch (err) {
-    alert(`오버레이 창을 열지 못했습니다: ${err.message}`);
-  }
-});
-
-let bannerTimer = null;
 const seenDonations = new Set();
-function speakDonationTTS(senderName, amount, message) {
-  if (isPopout || !ttsEnabled || !('speechSynthesis' in window)) return;
-  try {
-    const text = message
-      ? `${senderName}님이 ${amount.toLocaleString('ko-KR')}원 후원하셨습니다. ${message}`
-      : `${senderName}님이 ${amount.toLocaleString('ko-KR')}원 후원하셨습니다.`;
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = 'ko-KR';
-    utter.rate = 1.05;
-    window.speechSynthesis.speak(utter);
-  } catch {}
-}
 
 socket.on('stream:donation', (d) => {
   if (!currentStream) return;
@@ -983,28 +868,9 @@ socket.on('stream:donation', (d) => {
   currentStream.totalDonated = d.totalDonated;
   hudDonated.textContent = `💸 ${formatWon(d.totalDonated)}`;
 
-  applyDonationPosition();
-  donationBannerTitle.textContent = `${d.senderName}님이 ${formatWon(d.amount)} 후원!`;
-  donationBannerMsg.textContent = d.message || '';
-  donationBanner.hidden = false;
-  clearTimeout(bannerTimer);
-  if (!editingDonPos) {
-    bannerTimer = setTimeout(() => { donationBanner.hidden = true; }, 5000);
-  }
-
   appendChatRow(
-    `<div class="chat-donation">🎉 <strong>${escapeHtml(d.senderName)}</strong>님이 <strong>${formatWon(d.amount)}</strong> 후원!${d.message ? `<div>${escapeHtml(d.message)}</div>` : ''}</div>`
+    `<div class="chat-donation">🎉 <strong>${escapeHtml(d.senderName)}</strong>님이 <strong>${formatWon(d.amount)}</strong> 후원했습니다!${d.message ? `<div>${escapeHtml(d.message)}</div>` : ''}</div>`
   );
-
-  if (pipWin && !pipWin.closed) {
-    const box = pipWin.document.getElementById('pipDonBox');
-    if (box) {
-      box.style.display = 'block';
-      box.innerHTML = `<strong>💸 ${escapeHtml(d.senderName)}님이 ${formatWon(d.amount)} 후원!</strong><div>${escapeHtml(d.message || '')}</div>`;
-    }
-  }
-
-  speakDonationTTS(d.senderName, d.amount, d.message);
 });
 
 // Init

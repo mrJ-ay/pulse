@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PULSE — 실시간 개인방송 플랫폼</title>
-  <link rel="stylesheet" href="/style.css?v=8" />
+  <link rel="stylesheet" href="/style.css?v=10" />
 </head>
 <body>
   <header class="topbar">
@@ -65,17 +65,9 @@
             <span id="hudDonated" class="hud-chip gold">💸 ₩0</span>
           </div>
 
-          <!-- Donation Alert Banner -->
-          <div id="donationBanner" class="donation-banner" hidden>
-            <div class="don-badge">PULSE 후원</div>
-            <div id="donationBannerTitle" class="don-title">닉네임님이 ₩10,000 후원!</div>
-            <div id="donationBannerMsg" class="don-msg"></div>
-          </div>
-
           <div class="player-controls">
             <div class="ctrl-left">
               <button type="button" id="muteToggleBtn" class="ctrl-btn">🔊 소리 켜짐</button>
-              <button type="button" id="ttsToggleBtn" class="ctrl-btn active">🗣️ TTS 켜짐</button>
             </div>
             <div class="ctrl-right">
               <button type="button" id="switchSourceBtn" class="ctrl-btn" hidden>🔄 화면/캠 전환</button>
@@ -98,8 +90,6 @@
             </div>
           </div>
           <div id="modQuickActions" class="mod-quick" hidden>
-            <button type="button" id="editDonatePosBtn" class="btn small">📍 후원 위치</button>
-            <button type="button" id="pipOverlayBtn" class="btn small">🪟 오버레이 창</button>
             <button type="button" id="setNoticeBtn" class="btn small">📌 공지 설정</button>
           </div>
         </div>
@@ -135,7 +125,7 @@
           </div>
           <div class="donate-inputs">
             <input id="donateAmtInput" type="number" min="100" step="100" value="1000" placeholder="금액 (원)" />
-            <input id="donateMsgInput" type="text" maxlength="120" placeholder="후원 메시지 (TTS 낭독)" />
+            <input id="donateMsgInput" type="text" maxlength="120" placeholder="후원 메시지 입력 (선택)" />
             <button type="button" id="donateSendBtn" class="btn neon small">쏘기</button>
           </div>
         </div>
@@ -200,6 +190,6 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script type="module" src="/app.js?v=8"></script>
+  <script type="module" src="/app.js?v=10"></script>
 </body>
 </html>
